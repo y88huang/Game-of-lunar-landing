@@ -54,6 +54,9 @@ public:
         right_end.y=height;
         L=60;
     }
+    void drawplate(Display *display,Window window,GC gc){
+        XDrawRectangle(display, window, gc, left_end.x, left_end.y, 60 ,5);
+    }
     XPoint Get_left_end(){
         return left_end;
     }
@@ -70,7 +73,7 @@ public:
 class Pattern {
     
     vector< XPoint > points;
-    
+    vector<Plate>plates;
 public:
     
     void init(int n, int max_x, int max_y,int num_plate,int L) {//add one variable # of plate,and length of each plate.
@@ -84,7 +87,7 @@ public:
             cout<<i<<"is"<<a<<endl;
         }
         //now I am trying to construct a vector of plates.
-        vector<Plate>plates;
+        
         for (int i=0;i<num_plate;i++){
             int k=my_rand(2*(max_y/3),max_y);
             Plate tmp(p_of_plates[i],k);
@@ -119,7 +122,10 @@ void paint(Display* display, Window window, GC gc) {
         XDrawLines(display, window, gc,
                    &points[0], points.size(),  // vector of points
                    CoordModeOrigin ); // use absolute coordinates
-        
+    for(int i=0;i<plates.size();i++){
+        plates[i].drawplate(display, window, gc);
+    }
+
     }
 };
 
@@ -302,7 +308,7 @@ void initX(int argc, char* argv[], XInfo& xinfo) {
     XSelectInput( xinfo.display, xinfo.window,
                  ButtonPressMask | KeyPressMask |
                  ExposureMask | ButtonMotionMask );
-    pattern.init(4, (int)hints.width, (int)hints.height,4,60);
+    pattern.init(4, (int)hints.width, (int)hints.height,3,60);
     
     /*
      * Put the window on the screen.
