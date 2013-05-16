@@ -20,6 +20,7 @@ using namespace std;
 
 const int Border =5;
 const int BufferSize=10;
+const int L=60;//length of plates
 
 /*information to draw on the window*/
 struct XInfo{
@@ -35,7 +36,7 @@ bool lesst(const XPoint& a, const XPoint& b){
 
 //random number generator
 int my_rand(int a, int b)
-{ 
+{
     return a + (b - a) * (double)rand() / RAND_MAX;
     
 }
@@ -45,26 +46,21 @@ int my_rand(int a, int b)
 class Plate {
     XPoint left_end;
     XPoint right_end;
-    int L; //length of the plate.
 public:
     Plate(int left,int height){
         left_end.x=left;
         left_end.y=height;
         right_end.x=left+L;
         right_end.y=height;
-        L=60;
     }
     void drawplate(Display *display,Window window,GC gc){
-        XDrawRectangle(display, window, gc, left_end.x, left_end.y, 60 ,5);
+        XDrawRectangle(display, window, gc, left_end.x, left_end.y-5, 60 ,5);
     }
     XPoint Get_left_end(){
         return left_end;
     }
     XPoint Get_right_end(){
         return right_end;
-    }
-    int Get_L(){
-        return L;
     }
 };
 
@@ -76,18 +72,25 @@ class Pattern {
     vector<Plate>plates;
 public:
     
-    void init(int n, int max_x, int max_y,int num_plate,int L) {//add one variable # of plate,and length of each plate.
+    void init(int n, int max_x, int max_y,int num_plate) {//add one variable # of plate,and length of each plate.
+       
         vector<int> p_of_plates; //a vector specify every plate's position.
         for (int i=0;i<num_plate;i++){
-            int a=(max_x/num_plate)*(i+1);
+            int a;
+            if (i+1<num_plate){
+            a=my_rand((max_x/num_plate)*i,(max_x/num_plate)*(i+1));
+            }
+            else a=my_rand((max_x/num_plate)*i,max_x);
             if ((a-L)<0){
             }
             else a=a-L;
             p_of_plates.push_back(a);
-            cout<<i<<"is"<<a<<endl;
+            //cout<<i<<"is"<<a<<endl;
         }
-        //now I am trying to construct a vector of plates.
         
+        
+        
+        //now I am trying to construct a vector of plates.
         for (int i=0;i<num_plate;i++){
             int k=my_rand(2*(max_y/3),max_y);
             Plate tmp(p_of_plates[i],k);
@@ -102,15 +105,26 @@ public:
         max.x=max_x;
         max.y=max_y;
         points.push_back(zero);
-        for (int j=0;j<num_plate;j++){
+    for (int j=0;j<num_plate;j++){
             points.push_back(plates[j].Get_left_end());
             points.push_back(plates[j].Get_right_end());
         for (int i=0; i < n; i++) {
             XPoint p;
+            if (j+1>=num_plate){
+                p.x = my_rand(plates[j].Get_right_end().x, max_x);
+                p.y = my_rand(2*max_y/3, max_y);
+            }
+            else if(j==0){
+                p.x = my_rand(0,plates[j].Get_left_end().x);
+                p.y = my_rand(2*max_y/3, max_y);
+            }
+            else{
             p.x = my_rand(plates[j].Get_right_end().x, plates[j+1].Get_left_end().x);
             p.y = my_rand(2*max_y/3, max_y);
             cout << p.x << "," << p.y << endl;
+            }
             points.push_back(p);
+
         }
         sort(points.begin(),points.end(),lesst);
         }
@@ -308,12 +322,12 @@ void initX(int argc, char* argv[], XInfo& xinfo) {
     XSelectInput( xinfo.display, xinfo.window,
                  ButtonPressMask | KeyPressMask |
                  ExposureMask | ButtonMotionMask );
-    pattern.init(4, (int)hints.width, (int)hints.height,3,60);
+    pattern.init(3, (int)hints.width, (int)hints.height,4);
     
     /*
      * Put the window on the screen.
      */
-    XMapRaised( xinfo.display, xinfo.window );
+    XMapRaised(xinfo.display, xinfo.window);
 }
 
 
