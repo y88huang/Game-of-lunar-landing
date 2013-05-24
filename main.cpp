@@ -26,9 +26,10 @@ const int L=60;//length of plates
 const int FPS=30;//frame per second
 
 bool GameIsPlaying=false;//bool use to resume the game.
-bool IsLandingOnPad=false;
-bool IsSpeadTooMuch=false;
+bool IsLandingOnPad=false;//bool use to detect if the ship landing on pad.
+bool IsSpeadTooMuch=false;//bool use to detect if the ship is too fast.
 /*information to draw on the window*/
+bool isGoingTooFast=false;
 struct XInfo{
     Display* display;
     int screen;
@@ -79,7 +80,7 @@ public:
                 }
             }
         }
-         if((a1==0)&&(abs(line2.point1.y-point1.y)<=5)&&((line2.point1.x)>=point1.x)&&((line2.point2.x)<=point2.x)){
+         if((a1==0)&&(abs(line2.point1.y-point1.y)<=4)&&((line2.point1.x)>=point1.x)&&((line2.point2.x)<=point2.x)){
              IsLandingOnPad=true;
             return true;
          }
@@ -172,11 +173,29 @@ private:
     int y;
 public:
     virtual void paint(XInfo &xinfo) {
-            XFillRectangle(xinfo.display, xinfo.pixmap, xinfo.gc[1], x, y, width, height);
+         string CN="CN";
+        string Help="Dude!You are going too fast!";
+        string Scream="NOOOOOOO!!!";
+            XDrawRectangle(xinfo.display, xinfo.pixmap, xinfo.gc[1], x, y, width, height);
+        
+        XDrawImageString( xinfo.display, xinfo.pixmap, xinfo.gc[1],x+4,y+14, CN.c_str(),CN.length());
+        if (isGoingTooFast&&y<320){
+            XDrawImageString( xinfo.display, xinfo.pixmap, xinfo.gc[1],x-10,y-20, Help.c_str(),Help.length());
         }
-    
+        else if(isGoingTooFast&&y>=320){
+            XDrawImageString( xinfo.display, xinfo.pixmap, xinfo.gc[1],x-10,y-20, Scream.c_str(),Scream.length());
+        }
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x, y, x+10, y-10);
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x+10, y-10, x+20, y);
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x-3, y+height, x, y+height-10);
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x-3, y+height, x, y+height);
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x+width, y+height-10, x+width+3, y+height);
+        XDrawLine(xinfo.display, xinfo.pixmap, xinfo.gc[1], x+width, y+height, x+width+3, y+height);
+    }
+
     void move(XInfo &xinfo, int xDiff, int yDiff) {
        //if((x<=800&&x>=0)&&(y<=600&&y>=0)){
+        //movement+boundary check.
         if ((x<=800&&x>=0)){
         x += xDiff;
         }
@@ -204,10 +223,16 @@ public:
     int getY() {
         return y;
     }
+    int getWidth(){
+        return width;
+    }
+    int getHeight(){
+        return height;
+    }
     
     Spaceship(int x, int y): x(x), y(y) {
         width = 20;
-        height = 20;
+        height = 40;
     }
 };
 
@@ -366,9 +391,9 @@ public:
         XPoint x1;
         XPoint x2;
         x1.x=spaceship.getX();
-        x2.x=spaceship.getX()+20;
-        x1.y=spaceship.getY()+20;
-        x2.y=spaceship.getY()+20;
+        x2.x=spaceship.getX()+spaceship.getWidth();
+        x1.y=spaceship.getY()+spaceship.getHeight();
+        x2.y=spaceship.getY()+spaceship.getHeight();
         line_function bottom(x1,x2);
         cout<<"spaceship at ("<<x1.x<<" , "<<x1.y<<endl;
         for(int i=0;i<pattern.lines.size();i++){
@@ -428,7 +453,6 @@ void repaint( XInfo &xinfo) {
               0, 0); // position to put top left corner of pixmap in window
     
 	XFlush( xinfo.display );
-    
 }
 
 // EVENT LOOP!!!!!!!!!!!!
@@ -456,6 +480,7 @@ void eventloop(XInfo& xinfo){
     while (true) {
         if (XPending(xinfo.display)>0){
         XNextEvent(xinfo.display, &event);
+            //These are engine status.
             if(yDiff>=0){
             vertical.currentSpeed=yDiff;
             }
@@ -469,7 +494,14 @@ void eventloop(XInfo& xinfo){
             if (yDiff<=0){
                 TopMeter.currentSpeed=abs(yDiff);
             }
-            cout<<"THE VALUE IS "<<GameIsPlaying<<endl;
+            //Here to make the driver complain.
+            if (GameIsPlaying){
+                if(abs(xDiff)>=3||yDiff>4){
+                    isGoingTooFast=true;
+                }
+                else {isGoingTooFast=false;}
+            }
+            //Here after the collision happen.
             if(d&&GameIsPlaying){
                 GameIsPlaying=!GameIsPlaying;
                 if(yDiff>5){
